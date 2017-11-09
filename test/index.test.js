@@ -9,7 +9,56 @@ var GoogleAdWordsNew = require('../lib/');
 describe('Google AdWords New', function() {
   var analytics;
   var googleadwordsnew;
-  var options = {};
+  var options = {
+    accountId: 'AW-984542038',
+    sendPageView: true,
+    conversionLinker: true,
+    clickConversions: [
+      {
+        key: 'Order completed',
+        value: {
+          event: 'Order completed',
+          id: 'hNDoCJ6Yt3gQ1ta71QM',
+          accountId: ''
+        }
+      },
+      {
+        key: 'signup',
+        value: {
+          event: 'signup',
+          id: 'eAZJCICuz3gQ1ta71QM',
+          accountId: ''
+        }
+      },
+      {
+        key: 'login',
+        value: {
+          event: 'login',
+          id: 'eAZJCICuz3gQ1talksd', // random not real
+          accountId: 'AW-984293029' // random not real
+        }
+      }
+    ],
+    pageLoadConversions: [
+      {
+        key: 'Landing',
+        value: {
+          event: 'Landing',
+          id: '80mjCKaqz3gQ1ta71QM',
+          accountId: ''
+        }
+      },
+      {
+        key: 'purchase',
+        value: {
+          event: 'purchase',
+          id: 'hNDoCJ6Yt3gQ1ta71QM',
+          accountId: 'AW-984293029' // random not real
+        }
+      }
+    ],
+    defaultPageConversion: 'qnCxCOvxq18Q1ta71QM'
+  };
 
   beforeEach(function() {
     analytics = new Analytics();
@@ -28,8 +77,13 @@ describe('Google AdWords New', function() {
 
   it('should have the correct options', function() {
     analytics.compare(GoogleAdWordsNew, integration('Google AdWords New')
-    .option('apiKey', '')
-    .tag('<script src="">'));
+      .option('accountId', '')
+      .option('sendPageView', true)
+      .option('conversionLinker', true)
+      .option('clickConversions', {})
+      .option('pageLoadConversions', {})
+      .option('defaultPageConversion', '')
+      .tag('<script src="https://www.googletagmanager.com/gtag/js?id={{ accountId }}">'));
   });
 
   describe('before loading', function() {
@@ -38,8 +92,6 @@ describe('Google AdWords New', function() {
     });
 
     describe('#initialize', function() {
-      // write assertions here if you do any logic to create or set things in the `.initialize()` function
-
       it('should call load', function() {
         analytics.initialize();
         analytics.called(googleadwordsnew.load);
@@ -51,29 +103,113 @@ describe('Google AdWords New', function() {
     it('should load', function(done) {
       analytics.load(googleadwordsnew, done);
     });
+
+    it('should override default configs if desired', function(done) {
+      googleadwordsnew.options.sendPageView = false;
+      googleadwordsnew.options.conversionLinker = false;
+      analytics.once('ready', function() {
+        analytics.deepEqual(window.gtag.args[1], ['config', options.accountId, {
+          send_page_view: false,
+          conversion_linker: false
+        }]);
+        done();
+      });
+      analytics.initialize();
+      analytics.spy(window, 'gtag');
+    });
   });
 
   describe('after loading', function() {
     beforeEach(function(done) {
       analytics.once('ready', done);
       analytics.initialize();
-    });
-
-    // write all your post-load assertions and unit tests here such
-
-    describe('#identify', function() {
+      analytics.spy(window, 'gtag');
     });
 
     describe('#page', function() {
+      it('should send default page load conversion if `.page()` call is unnamed and conversionId is provided', function() {
+        analytics.page();
+        // first two args pushed in .initialize()
+        analytics.deepEqual(window.gtag.args[2], ['event', 'conversion', {
+          send_to: options.accountId + '/' + options.defaultPageConversion,
+          path: location.pathname,
+          referrer: document.referrer,
+          search: location.search,
+          title: document.title,
+          url: location.href
+        }]);
+      });
+
+      it('should map page names to specific conversionId', function() {
+        analytics.page('landing');
+        analytics.deepEqual(window.gtag.args[2], ['event', 'landing', {
+          name: 'landing',
+          send_to: options.accountId + '/80mjCKaqz3gQ1ta71QM',
+          path: location.pathname,
+          referrer: document.referrer,
+          search: location.search,
+          title: document.title,
+          url: location.href
+        }]);
+      });
+
+      it('should allow overriding accountId when sending page load conversions', function() {
+        analytics.page('purchase');
+        analytics.deepEqual(window.gtag.args[2], ['event', 'purchase', {
+          name: 'purchase',
+          send_to: 'AW-984293029/hNDoCJ6Yt3gQ1ta71QM',
+          path: location.pathname,
+          referrer: document.referrer,
+          search: location.search,
+          title: document.title,
+          url: location.href
+        }]);
+      });
+
+      it('should send integration specific options for value, currency, and transaction_id', function() {
+        analytics.page({}, {
+          'Google AdWords New': {
+            value: 2,
+            currency: 'USD',
+            orderId: 'demodog-dart'
+          }
+        });
+        analytics.deepEqual(window.gtag.args[2], ['event', 'conversion', {
+          send_to: options.accountId + '/' + options.defaultPageConversion,
+          path: location.pathname,
+          referrer: document.referrer,
+          search: location.search,
+          title: document.title,
+          url: location.href,
+          value: 2,
+          currency: 'USD',
+          transaction_id: 'demodog-dart'
+        }]);
+      });
     });
 
     describe('#track', function() {
-    });
+      it('should send mapped track events', function() {
+        analytics.track('signup', {
+          value: 10
+        });
+        analytics.deepEqual(window.gtag.args[2], ['event', 'signup', {
+          send_to: options.accountId + '/eAZJCICuz3gQ1ta71QM',
+          value: 10
+        }]);
+      });
 
-    describe('#group', function() {
-    });
-
-    describe('#alias', function() {
+      it('should send revenue for order completed events', function() {
+        analytics.track('order completed', {
+          order_id: 'totally-tubular',
+          revenue: 25
+        });
+        analytics.deepEqual(window.gtag.args[2], ['event', 'order completed', {
+          send_to: options.accountId + '/hNDoCJ6Yt3gQ1ta71QM',
+          value: 25,
+          transaction_id: 'totally-tubular'
+        }]);
+      });
     });
   });
 });
