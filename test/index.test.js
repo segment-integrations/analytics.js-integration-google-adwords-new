@@ -15,7 +15,6 @@ describe('Google AdWords New', function() {
     conversionLinker: true,
     clickConversions: [
       {
-        key: 'Order completed',
         value: {
           event: 'Order completed',
           id: 'hNDoCJ6Yt3gQ1ta71QM',
@@ -23,7 +22,6 @@ describe('Google AdWords New', function() {
         }
       },
       {
-        key: 'signup',
         value: {
           event: 'signup',
           id: 'eAZJCICuz3gQ1ta71QM',
@@ -31,7 +29,6 @@ describe('Google AdWords New', function() {
         }
       },
       {
-        key: 'login',
         value: {
           event: 'login',
           id: 'eAZJCICuz3gQ1talksd', // random not real
@@ -41,7 +38,6 @@ describe('Google AdWords New', function() {
     ],
     pageLoadConversions: [
       {
-        key: 'Landing',
         value: {
           event: 'Landing',
           id: '80mjCKaqz3gQ1ta71QM',
@@ -49,7 +45,6 @@ describe('Google AdWords New', function() {
         }
       },
       {
-        key: 'purchase',
         value: {
           event: 'purchase',
           id: 'hNDoCJ6Yt3gQ1ta71QM',
